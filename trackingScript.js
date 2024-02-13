@@ -44,6 +44,12 @@ function sendTrackingData() {
   data.append('referrer', document.referrer);
   data.append('pageUrl', window.location.href);
 
+  // Check for __gtm_campaign_url cookie and include it as utmSource if it exists
+  var utmSource = getCookie('__gtm_campaign_url');
+  if (utmSource) {
+    data.append('utmSource', utmSource);
+  }
+
   // Check for Send Beacon support
   if (navigator.sendBeacon) {
     const beaconUrl = 'https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent';
