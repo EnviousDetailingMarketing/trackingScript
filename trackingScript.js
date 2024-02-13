@@ -34,3 +34,30 @@ if (!userId) {
   setCookie('user_id', userId, 365);
   document.getElementById('cookieCompliance').style.display = 'block';
 }
+
+
+// Function to send tracking data
+function sendTrackingData() {
+  var data = new URLSearchParams();
+  data.append('userId', userId);
+  data.append('eventType', 'pageView');
+  data.append('referrer', document.referrer);
+  data.append('pageUrl', window.location.href);
+
+  // Check for Send Beacon support
+  if (navigator.sendBeacon) {
+    const beaconUrl = 'https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent';
+    navigator.sendBeacon(beaconUrl, data);
+  } else {
+    // Fallback for browsers that do not support Send Beacon
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', beaconUrl, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send(data);
+  }
+}
+
+// Call sendTrackingData on page load
+document.addEventListener('DOMContentLoaded', function() {
+  sendTrackingData();
+});
