@@ -56,7 +56,7 @@ function sendTrackingData() {
 
   // Check for Send Beacon support
   if (navigator.sendBeacon) {
-    const beaconUrl = 'https://your-server-endpoint/trackEvent';
+    const beaconUrl = 'https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent';
     navigator.sendBeacon(beaconUrl, data);
   } else {
     // Fallback for browsers that do not support Send Beacon
