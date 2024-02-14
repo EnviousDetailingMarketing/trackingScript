@@ -35,7 +35,6 @@ if (!userId) {
   document.getElementById('cookieCompliance').style.display = 'block';
 }
 
-
 // Function to send tracking data
 function sendTrackingData() {
   var data = new URLSearchParams();
@@ -44,21 +43,20 @@ function sendTrackingData() {
   data.append('referrer', document.referrer);
   data.append('pageUrl', window.location.href);
 
-   // Check for __gtm_campaign_url cookie and include it as utmSource if it exists
-  var utmSource = getCookie('__gtm_campaign_url');
-  if (utmSource) {
-    data.append('utmSource', utmSource);
-  }
-
   // Check for __gtm_campaign_url cookie and include it as utmSource if it exists
   var utmSource = getCookie('__gtm_campaign_url');
   if (utmSource) {
-    data.append('utmSource', utmSource);
+    // Ensure only a single entry for utmSource is appended
+    if (!data.has('utmSource')) {
+      data.append('utmSource', utmSource);
+    } else {
+      data.set('utmSource', utmSource); // Update the value if it already exists
+    }
   }
 
   // Check for Send Beacon support
   if (navigator.sendBeacon) {
-    const beaconUrl = 'https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent';
+    const beaconUrl = 'https://your-server-endpoint/trackEvent';
     navigator.sendBeacon(beaconUrl, data);
   } else {
     // Fallback for browsers that do not support Send Beacon
@@ -69,7 +67,9 @@ function sendTrackingData() {
   }
 }
 
-// Call sendTrackingData on page load
-document.addEventListener('DOMContentLoaded', function() {
+// Ensure sendTrackingData is only called once when the DOM content is fully loaded
+if (document.readyState === 'loading') {  // Loading hasn't finished yet
+  document.addEventListener('DOMContentLoaded', sendTrackingData);
+} else {  // `DOMContentLoaded` has already fired
   sendTrackingData();
-});
+}
