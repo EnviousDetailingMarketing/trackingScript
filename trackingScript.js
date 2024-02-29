@@ -35,48 +35,41 @@ if (!userId) {
   document.getElementById('cookieCompliance').style.display = 'block';
 }
 
+// Function to send tracking data
 function sendTrackingData() {
-  // Get the user's IP address asynchronously
-  fetch('https://api.ipify.org?format=json')
-    .then(response => response.json())
-    .then(data => {
-      const userIp = data.ip; // Extracting the IP address from the response
+  var data = new URLSearchParams();
+  data.append('userId', userId);
+  data.append('eventType', 'pageView');
+  data.append('referrer', document.referrer);
+  data.append('pageUrl', window.location.href);
 
-      // Now that we have the IP, construct the rest of the tracking data
-      var trackingData = new URLSearchParams();
-      trackingData.append('userId', userId);
-      trackingData.append('eventType', 'pageView');
-      trackingData.append('referrer', document.referrer);
-      trackingData.append('pageUrl', window.location.href);
-      trackingData.append('IPAddress', userIp); // Add the IP address to the tracking data
+  // Check for __gtm_campaign_url cookie and include it as utmSource if it exists
+  var utmSource = getCookie('__gtm_campaign_url');
+  if (utmSource) {
+    // Ensure only a single entry for utmSource is appended
+    if (!data.has('utmSource')) {
+      data.append('utmSource', utmSource);
+    } else {
+      data.set('utmSource', utmSource); // Update the value if it already exists
+    }
+  }
 
-      var utmSource = getCookie('__gtm_campaign_url');
-      if (utmSource) {
-        if (!trackingData.has('utmSource')) {
-          trackingData.append('utmSource', utmSource);
-        } else {
-          trackingData.set('utmSource', utmSource);
-        }
-      }
-
-      // Send the tracking data using Beacon API or fallback
-      const beaconUrl = 'https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent';
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(beaconUrl, trackingData);
-      } else {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', beaconUrl, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.send(trackingData);
-      }
-    })
-    .catch(error => console.error('Error fetching the user IP:', error));
+  // Check for Send Beacon support
+  if (navigator.sendBeacon) {
+    const beaconUrl = 'https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent';
+    navigator.sendBeacon(beaconUrl, data);
+  } else {
+    // Fallback for browsers that do not support Send Beacon
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', beaconUrl, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send(data);
+  }
 }
 
-// Trigger sendTrackingData as before
-if (document.readyState === 'loading') {
+// Ensure sendTrackingData is only called once when the DOM content is fully loaded
+if (document.readyState === 'loading') {  // Loading hasn't finished yet
   document.addEventListener('DOMContentLoaded', sendTrackingData);
-} else {
+} else {  // `DOMContentLoaded` has already fired
   sendTrackingData();
 }
-
