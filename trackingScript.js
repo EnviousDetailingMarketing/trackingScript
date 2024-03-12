@@ -43,6 +43,15 @@ function sendTrackingData() {
   data.append('referrer', document.referrer);
   data.append('pageUrl', window.location.href);
 
+  var la = getCookie('_la');
+  var lo = getCookie('_lo');
+  
+  // Only add these if they exist
+  if (la && lo) {
+    data.append('la', la);
+    data.append('lo', lo);
+  }
+
   // Check for __gtm_campaign_url cookie and include it as utmSource if it exists
   var utmSource = getCookie('__gtm_campaign_url');
   if (utmSource) {
