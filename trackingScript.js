@@ -33,7 +33,7 @@
         let userId = manageCookie("user_id");
         if (!userId) {
             userId = uuidv4();
-            manageCookie("user_id", userId, 365, 'envious-detailing.webflow.io');
+            manageCookie("user_id", userId, 365, 'enviousdetailing.com');
             const cookieCompliance = document.getElementById("cookieCompliance");
             if (cookieCompliance) {
                 cookieCompliance.style.display = "block";
@@ -46,7 +46,7 @@
         let sessionId = manageCookie("session_id");
         if (!sessionId) {
             sessionId = uuidv4();
-            manageCookie("session_id", sessionId, 0.5, 'envious-detailing.webflow.io'); // 0.5 days = 12 hours
+            manageCookie("session_id", sessionId, 0.5, 'enviousdetailing.com'); // 0.5 days = 12 hours
         }
         return sessionId;
     }
