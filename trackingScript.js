@@ -30,17 +30,13 @@
     }
 
     let userId = getCookie("user_id");
-    console.log("Existing user_id cookie:", userId);
 
     if (!userId) {
         userId = uuidv4();
-        setCookie("user_id", userId, 365, 'envious-detailing.webflow.io');
-        console.log("New user_id set:", userId);
+        setCookie("user_id", userId, 365, 'enviousdetailing.com');
         if (document.getElementById("cookieCompliance")) {
             document.getElementById("cookieCompliance").style.display = "block";
         }
-    } else {
-        console.log("Using existing user_id:", userId);
     }
 
     function sendTrackingData() {
