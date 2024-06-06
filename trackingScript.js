@@ -34,7 +34,7 @@
 
     if (!userId) {
         userId = uuidv4();
-        setCookie("user_id", userId, 365, 'enviousdetailing.com');
+        setCookie("user_id", userId, 365, 'envious-detailing.webflow.io');
         console.log("New user_id set:", userId);
         if (document.getElementById("cookieCompliance")) {
             document.getElementById("cookieCompliance").style.display = "block";
