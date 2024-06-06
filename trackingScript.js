@@ -8,7 +8,6 @@
 
     function manageCookie(name, value = null, days = null, domain = null) {
         if (value !== null) {
-            // Set cookie
             let expires = "";
             if (days) {
                 const date = new Date();
@@ -21,7 +20,6 @@
             }
             document.cookie = cookieString;
         } else {
-            // Get cookie
             const cookies = document.cookie.split(';');
             for (let cookie of cookies) {
                 let [cookieName, cookieValue] = cookie.split('=').map(c => c.trim());
@@ -31,20 +29,35 @@
         }
     }
 
-    let userId = manageCookie("user_id");
-
-    if (!userId) {
-        userId = uuidv4();
-        manageCookie("user_id", userId, 365, 'envious-detailing.webflow.io');
-        const cookieCompliance = document.getElementById("cookieCompliance");
-        if (cookieCompliance) {
-            cookieCompliance.style.display = "block";
+    function getUserId() {
+        let userId = manageCookie("user_id");
+        if (!userId) {
+            userId = uuidv4();
+            manageCookie("user_id", userId, 365, 'enviousdetailing.com');
+            const cookieCompliance = document.getElementById("cookieCompliance");
+            if (cookieCompliance) {
+                cookieCompliance.style.display = "block";
+            }
         }
+        return userId;
     }
 
-    async function sendTrackingData() {
+    function getSessionId() {
+        let sessionId = manageCookie("session_id");
+        if (!sessionId) {
+            sessionId = uuidv4();
+            manageCookie("session_id", sessionId, 0.5, 'enviousdetailing.com'); // 0.5 days = 12 hours
+        }
+        return sessionId;
+    }
+
+    const userId = getUserId();
+    const sessionId = getSessionId();
+
+    async function sendTrackingData(maxRetries = 3) {
         const e = new URLSearchParams();
         e.append("userId", userId);
+        e.append("sessionId", sessionId);
         e.append("eventType", "pageView");
         e.append("referrer", document.referrer);
         e.append("pageUrl", window.location.href);
@@ -62,25 +75,38 @@
         }
 
         const beaconUrl = "https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent";
-        if (navigator.sendBeacon) {
-            navigator.sendBeacon(beaconUrl, e);
-        } else {
-            try {
+
+        const sendRequest = async () => {
+            if (navigator.sendBeacon) {
+                return navigator.sendBeacon(beaconUrl, e);
+            } else {
                 const response = await fetch(beaconUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: e.toString()
                 });
                 if (!response.ok) throw new Error('Network response was not ok');
+            }
+        };
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                await sendRequest();
+                break; // Exit loop if request is successful
             } catch (error) {
-                console.error('Error sending tracking data:', error);
+                if (attempt === maxRetries) {
+                    console.error('Error sending tracking data after retries:', error);
+                } else {
+                    console.warn(`Retry ${attempt} failed, retrying...`);
+                    await new Promise(resolve => setTimeout(resolve, Math.min(2 ** attempt * 1000, 30000))); // Exponential backoff with cap
+                }
             }
         }
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", sendTrackingData);
+        document.addEventListener("DOMContentLoaded", () => sendTrackingData(3));
     } else {
-        sendTrackingData();
+        sendTrackingData(3);
     }
 })();
