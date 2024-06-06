@@ -46,7 +46,7 @@
         let sessionId = manageCookie("session_id");
         if (!sessionId) {
             sessionId = uuidv4();
-            manageCookie("session_id", sessionId, 0.5, 'enviousdetailing.com'); // 0.5 days = 12 hours
+            manageCookie("session_id", sessionId, 0.5, 'envious-detailing.webflow.io'); // 0.5 days = 12 hours
         }
         return sessionId;
     }
