@@ -33,7 +33,7 @@
         let userId = manageCookie("user_id");
         if (!userId) {
             userId = uuidv4();
-            manageCookie("user_id", userId, 365, 'enviousdetailing.com');
+            manageCookie("user_id", userId, 365, 'envious-detailing.webflow.io');
             const cookieCompliance = document.getElementById("cookieCompliance");
             if (cookieCompliance) {
                 cookieCompliance.style.display = "block";
