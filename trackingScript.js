@@ -6,70 +6,75 @@
         });
     }
 
-    function getCookie(e) {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-            let [name, value] = cookie.split('=').map(c => c.trim());
-            if (name === e) return decodeURIComponent(value);
+    function manageCookie(name, value = null, days = null, domain = null) {
+        if (value !== null) {
+            // Set cookie
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            let cookieString = `${name}=${encodeURIComponent(value)}${expires}; path=/`;
+            if (domain) {
+                cookieString += `; domain=${domain}`;
+            }
+            document.cookie = cookieString;
+        } else {
+            // Get cookie
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                let [cookieName, cookieValue] = cookie.split('=').map(c => c.trim());
+                if (cookieName === name) return decodeURIComponent(cookieValue);
+            }
+            return null;
         }
-        return null;
     }
 
-    function setCookie(e, n, t, domain) {
-        let expires = "";
-        if (t) {
-            const date = new Date();
-            date.setTime(date.getTime() + (t * 24 * 60 * 60 * 1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        let cookieString = `${e}=${encodeURIComponent(n)}${expires}; path=/`;
-        if (domain) {
-            cookieString += `; domain=${domain}`;
-        }
-        document.cookie = cookieString;
-    }
-
-    let userId = getCookie("user_id");
+    let userId = manageCookie("user_id");
 
     if (!userId) {
         userId = uuidv4();
-        setCookie("user_id", userId, 365, 'enviousdetailing.com');
-        if (document.getElementById("cookieCompliance")) {
-            document.getElementById("cookieCompliance").style.display = "block";
+        manageCookie("user_id", userId, 365, 'enviousdetailing.com');
+        const cookieCompliance = document.getElementById("cookieCompliance");
+        if (cookieCompliance) {
+            cookieCompliance.style.display = "block";
         }
     }
 
-    function sendTrackingData() {
+    async function sendTrackingData() {
         const e = new URLSearchParams();
         e.append("userId", userId);
         e.append("eventType", "pageView");
         e.append("referrer", document.referrer);
         e.append("pageUrl", window.location.href);
 
-        const n = getCookie("_la");
-        const t = getCookie("_lo");
-        if (n && t) {
-            e.append("la", n);
-            e.append("lo", t);
+        const la = manageCookie("_la");
+        const lo = manageCookie("_lo");
+        if (la && lo) {
+            e.append("la", la);
+            e.append("lo", lo);
         }
 
-        const r = getCookie("__gtm_campaign_url");
-        if (r) {
-            if (e.has("utmSource")) {
-                e.set("utmSource", r);
-            } else {
-                e.append("utmSource", r);
-            }
+        const gtmCampaignUrl = manageCookie("__gtm_campaign_url");
+        if (gtmCampaignUrl) {
+            e.append("utmSource", gtmCampaignUrl);
         }
 
         const beaconUrl = "https://us-central1-envious-detailing-firestore.cloudfunctions.net/trackEvent";
         if (navigator.sendBeacon) {
             navigator.sendBeacon(beaconUrl, e);
         } else {
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", beaconUrl, true);
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.send(e);
+            try {
+                const response = await fetch(beaconUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: e.toString()
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+            } catch (error) {
+                console.error('Error sending tracking data:', error);
+            }
         }
     }
 
